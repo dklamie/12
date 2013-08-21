@@ -1,0 +1,344 @@
+@echo off
+
+rem <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+rem 
+rem Batch file by Gary Rowe Photography, 2011
+rem
+rem <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+echo Running 5DtoRGB for all files passed
+
+rem (remove 'rem' from beginning of next line to test the batch file)
+rem set test=Y
+
+rem ##########################################################################################
+
+rem If you want to hardcode what happens, remove the 'rem' from the start of the 
+rem next two lines, set the frame rate you want, and the name of the style you want (to go to)
+
+rem set frame_rate=1
+rem goto CineStyle
+
+rem ##########################################################################################
+
+
+rem Set where your copy of 5DtoRGB lives
+rem
+set exe5D=C:\5DtoRGB\5DtoRGB.exe
+
+if exist %exe5D% goto gotexe
+
+echo .
+echo Cannot find 5DtoRGB.exe (%exe5D%)
+echo .
+pause
+goto finished
+
+
+:gotexe
+rem Parameters
+rem ========================================================================================
+
+rem %1 holds full path & filename of input file
+rem %1 is passed to 5DtoRGB as the output path/filename too, and it adds '_1' to the end of the name passed
+
+
+rem Output Format
+rem
+rem 0. Uncompressed 10 bit 4:2:2 v2.10
+rem 1. Uncompressed 8 bit 4:2:2 UYVY
+rem 2. Avid DNxHD 175 Mb/sec    
+rem 3. Avid DNxHD 115 Mb/sec
+rem 4. ProRes Proxy
+rem 5. QuickTime RLE/Animation
+rem 6. HuffYUV (RGB)/Animation
+
+rem Output File Type
+rem
+rem 0 = MOV
+rem 1 = AVI
+
+rem Decoding Matrix
+rem
+rem 0 = ITU-R BT.601  
+rem 1 = ITU-R BT.709  
+rem 2 = Technicolor CineStyle  
+
+rem Gamma Flagging
+rem
+rem 0 = 1.8 (Flatter)
+rem 1 = 2.2 (More Contrast)
+rem 2 = None
+rem
+rem =========================================================================================
+
+:frame
+cls
+
+set output_format=
+set output_filetype=
+set decoding_matrix=
+set gamma_flagging=
+set frame_rate=
+
+echo .
+echo Enter Frame Rate to use (all selected files)
+echo .
+echo   1 = 23.976
+echo   2 = 24     (Film)
+echo   3 = 25     (PAL/SECAM)
+echo   4 = 29
+echo   5 = 29.97  (NTSC)
+echo   6 = 30
+echo   7 = 50
+echo   8 = 59.94
+echo   9 = 60
+echo .
+choice	/C 123456789 /T 5 /D 1 /M "Enter your choice (will default to 23.976 fps after 5s)..."
+
+IF ERRORLEVEL ==1 set frame_rate=23.976
+IF ERRORLEVEL ==2 set frame_rate=24
+IF ERRORLEVEL ==3 set frame_rate=25 
+IF ERRORLEVEL ==4 set frame_rate=29
+IF ERRORLEVEL ==5 set frame_rate=29.97
+IF ERRORLEVEL ==6 set frame_rate=30
+IF ERRORLEVEL ==7 set frame_rate=50
+IF ERRORLEVEL ==8 set frame_rate=59.94
+IF ERRORLEVEL ==9 set frame_rate=60
+cls
+echo .
+echo Frame Rate set to %frame_rate%
+echo .
+
+set input=
+
+echo .
+echo Enter Style to use for all selected files
+echo .
+echo   1 = CineStyle, output as AVI, CineStyle decoding,    with more contrast
+echo   2 = Neutral,   output as AVI, ITU-R BT.601 decoding, with more contrast
+echo   3 = Standard,  output as AVI, ITU-R BT.601 decoding, with no gamma adjustment
+echo .
+echo   x = Choose individual settings
+echo .
+
+choice	/C 123x /T 5 /D 3 /M "Enter your choice (will default to CineStyle after 5s)..."
+
+IF ERRORLEVEL ==4 goto individual
+IF ERRORLEVEL ==3 goto Standard
+IF ERRORLEVEL ==2 goto Neutral
+IF ERRORLEVEL ==1 goto CineStyle
+
+:individual
+
+cls
+echo Select Output Format
+echo .
+echo 1. Uncompressed 10 bit 4:2:2 v2.10
+echo 2. Uncompressed 8 bit 4:2:2 UYVY
+echo 3. Avid DNxHD 175 Mb/sec    
+echo 4. Avid DNxHD 115 Mb/sec
+echo 5. Avid DNxHD 36 Mb/secc
+echo 6. QuickTime RLE/Animation
+echo 7. HuffYUV (RGB)/Animation
+echo .
+choice	/C 1234567 /M "Enter your choice ..."
+
+IF ERRORLEVEL ==1 set output_format=0
+IF ERRORLEVEL ==2 set output_format=1
+IF ERRORLEVEL ==3 set output_format=2
+IF ERRORLEVEL ==4 set output_format=3
+IF ERRORLEVEL ==5 set output_format=4
+IF ERRORLEVEL ==6 set output_format=5
+IF ERRORLEVEL ==7 set output_format=6
+cls
+if [%output_format%] == [0]   echo Output Format = Uncompressed 10 bit 4:2:2 (v2.10)
+if [%output_format%] == [1]   echo Output Format = Uncompressed 8 bit 4:2:2 (UYVY)
+if [%output_format%] == [2]   echo Output Format = Avid DNxHD 175 Mb/sec       
+if [%output_format%] == [3]   echo Output Format = Avid DNxHD 115 Mb/sec           
+if [%output_format%] == [4]   echo Output Format = Avid DNxHD 36 Mb/sec           
+if [%output_format%] == [5]   echo Output Format = QuickTime RLE/Animation         
+if [%output_format%] == [6]   echo Output Format = HuffYUV RGB/Animation           
+
+
+echo .
+echo Select Output File Type
+echo .
+echo 1 = MOV
+echo 2 = AVI
+echo .
+choice	/C 12 /M "Enter your choice ..."
+
+IF ERRORLEVEL ==1 set output_filetype=0
+IF ERRORLEVEL ==2 set output_filetype=1
+cls
+if [%output_filetype%] == [0] echo Output File Type = AVI
+if [%output_filetype%] == [1] echo Output File Type = AVI
+
+
+echo .
+echo Select Decoding Matrix
+echo .
+echo 1 = ITU-R BT.601  
+echo 2 = ITU-R BT.709  
+echo 3 = Technicolor CineStyle  
+echo .
+choice	/C 123 /M "Enter your choice ..."
+
+IF ERRORLEVEL ==1 set decoding_matrix=0
+IF ERRORLEVEL ==2 set decoding_matrix=1
+IF ERRORLEVEL ==3 set decoding_matrix=2
+cls
+if [%decoding_matrix%] == [0] echo Colour Space = ITU-R BT.601  
+if [%decoding_matrix%] == [1] echo Colour Space = ITU-R BT.709  
+if [%decoding_matrix%] == [2] echo Colour Space = Technicolor CineStyle
+
+echo .
+echo Select Gamma Flagging
+echo .
+echo 1 = 1.8 (Flatter)
+echo 2 = 2.2 (More Contrast)
+echo 3 = None
+echo .
+choice	/C 123 /M "Enter your choice ..."
+
+IF ERRORLEVEL ==1 set gamma_flagging=0
+IF ERRORLEVEL ==2 set gamma_flagging=1
+IF ERRORLEVEL ==3 set gamma_flagging=2
+cls
+if [%gamma_flagging%] == [0]  echo Gamma Flagging = 1.8 (Flatter)
+if [%gamma_flagging%] == [1]  echo Gamma Flagging = 2.2 (More Contrast)
+if [%gamma_flagging%] == [2]  echo Gamma Flagging = None
+
+
+rem Set flag to show that individual inputs were requested, let them choose to go on or try again
+set input=y
+goto doit
+
+
+:CineStyle
+
+echo Style = CineStyle
+echo .
+set output_format=4
+set output_filetype=0
+set decoding_matrix=1
+set gamma_flagging=0
+goto doit
+
+
+:Neutral
+
+echo Style = Neutral
+echo .
+set output_format=2
+set output_filetype=1
+set decoding_matrix=0
+set gamma_flagging=1
+goto doit
+
+
+:Standard
+
+echo Style = Standard
+echo .
+set output_format=4
+set output_filetype=0
+set decoding_matrix=0
+set gamma_flagging=2
+goto doit
+
+
+:doit
+if [%test%] == [Y] pause
+
+cls
+echo .
+echo File Name = %1
+echo .
+
+:show
+if [%output_format%] == [0]   echo Output Format = Uncompressed 10 bit 4:2:2 (v2.10)
+if [%output_format%] == [1]   echo Output Format = Uncompressed 8 bit 4:2:2 (UYVY)
+if [%output_format%] == [2]   echo Output Format = Avid DNxHD 175 Mb/sec       
+if [%output_format%] == [3]   echo Output Format = Avid DNxHD 115 Mb/sec           
+if [%output_format%] == [4]   echo Output Format = Avid DNxHD 36 Mb/sec           
+if [%output_format%] == [5]   echo Output Format = QuickTime RLE/Animation         
+if [%output_format%] == [6]   echo Output Format = HuffYUV RGB/Animation           
+
+:ft
+if [%output_filetype%] == [0] echo Output File Type = AVI
+if [%output_filetype%] == [1] echo Output File Type = AVI
+
+
+:dm
+if [%decoding_matrix%] == [0] echo Colour Space = ITU-R BT.601  
+if [%decoding_matrix%] == [1] echo Colour Space = ITU-R BT.709  
+if [%decoding_matrix%] == [2] echo Colour Space = Technicolor CineStyle
+
+:gf
+if [%gamma_flagging%] == [0]  echo Gamma Flagging = 1.8 (Flatter)
+if [%gamma_flagging%] == [1]  echo Gamma Flagging = 2.2 (More Contrast)
+if [%gamma_flagging%] == [2]  echo Gamma Flagging = None
+
+:fr
+echo Frame Rate = %frame_rate%
+echo .
+
+
+rem Show inputs to user, for confirmation?
+
+if NOT [%input%] == [y] goto again
+
+
+choice /C yn /D y /T 12 /M "OK to process with these settings?"
+if errorlevel ==2 goto frame
+
+:again
+if [%test%] == [Y] pause
+if [%1] == [] goto finished
+
+
+echo .
+
+rem  If a test, just display the call to 5DtoRGB and go on to the next file
+if NOT [%test%] == [Y] goto forreal
+
+echo %exe5D% %1 %output_format% %output_filetype% %decoding_matrix% %gamma_flagging% %frame_rate%
+goto getnext
+
+
+
+:forreal
+
+rem if for real, execute 5DtoRGB with the configured parameters, and then go for the next file
+echo .
+echo calling 5DtoRGB for %1 ...
+%exe5D% %1 %output_format% %output_filetype% %decoding_matrix% %gamma_flagging% %frame_rate%
+if errorlevel == 1 goto error
+
+
+:getnext
+
+if [%test%] == [Y] pause
+shift
+goto again
+
+
+
+:error
+rem sadly, error handling like this isn't currently supported by 5DtoRGB :-(
+rem so this won't happen at the moment ...
+
+echo .
+echo Error occurred processing %1 ...
+echo .
+choice /T 5
+goto getnext
+
+
+:finished
+choice /T 10 /M "Finished !"
+echo .
+
